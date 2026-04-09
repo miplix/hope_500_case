@@ -71,10 +71,6 @@
       <label>Contract Address</label>
       <input id="contract" value="yuplandshop.mintbase1.near" />
     </div>
-    <div>
-      <label>API Key</label>
-      <input id="apikey" value="j9mwYHIkRsmhM7dOoJy9yBSEdSZSWtBw02BOIGy3jzk" />
-    </div>
   </div>
   <div class="pairs-header">
     <span>Token IDs (через пробел, запятую, перенос)</span>
@@ -118,11 +114,11 @@ function collectPairs() {
   return { pairs: all };
 }
 
-async function fetchBatch(contract, apikey, ids) {
+async function fetchBatch(contract, ids) {
   const res = await fetch('/api/nft', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contract, apikey, token_ids: ids })
+    body: JSON.stringify({ contract, token_ids: ids })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -133,7 +129,6 @@ async function fetchBatch(contract, apikey, ids) {
 
 async function run() {
   const contract = document.getElementById('contract').value.trim();
-  const apikey = document.getElementById('apikey').value.trim();
   const progress = document.getElementById('progress');
   const result = document.getElementById('result');
   const btn = document.getElementById('runBtn');
@@ -152,7 +147,7 @@ async function run() {
     const ids = batch.map(b => b.tokenId);
     progress.textContent = 'Загрузка ' + Math.min(i + BATCH, pairs.length) + ' / ' + pairs.length + '...';
     try {
-      const data = await fetchBatch(contract, apikey, ids);
+      const data = await fetchBatch(contract, ids);
       for (const item of data.items) {
         const pair = batch.find(b => b.tokenId === item.token_id);
         if (!pair) continue;

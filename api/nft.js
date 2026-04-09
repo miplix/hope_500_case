@@ -1,8 +1,10 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { contract, apikey, token_ids } = req.body;
-  if (!contract || !apikey || !token_ids?.length) return res.status(400).json({ error: 'Missing params' });
+  const { contract, token_ids } = req.body;
+  const apikey = process.env.SENDLER_API_KEY;
+  if (!contract || !token_ids?.length) return res.status(400).json({ error: 'Missing params' });
+  if (!apikey) return res.status(500).json({ error: 'API key not configured' });
 
   try {
     const r = await fetch(
