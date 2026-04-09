@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFT Owner Aggregator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 20px; color: #e94560; font-size: 1.4rem; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .input-section { display: flex; gap: 16px; margin-bottom: 12px; }
+  .input-section > div { flex: 1; }
+  .input-section label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #aaa; }
+  .input-section textarea {
+    width: 100%; height: 180px; background: #16213e; border: 1px solid #333; color: #eee;
+    border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.9rem; resize: vertical;
+  }
+  .input-section textarea:focus { outline: none; border-color: #e94560; }
+  .api-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: end; }
+  .api-row > div { flex: 1; }
+  .api-row label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #aaa; }
+  .api-row input {
+    width: 100%; background: #16213e; border: 1px solid #333; color: #eee;
+    border-radius: 8px; padding: 8px 10px; font-size: 0.85rem;
+  }
+  .api-row input:focus { outline: none; border-color: #e94560; }
+  .btn {
+    background: #e94560; color: #fff; border: none; border-radius: 8px; padding: 10px 28px;
+    font-size: 0.95rem; cursor: pointer; transition: background 0.2s;
+  }
+  .btn:hover { background: #c73650; }
+  .btn:disabled { background: #555; cursor: not-allowed; }
+  .progress { margin: 10px 0; font-size: 0.85rem; color: #aaa; min-height: 20px; }
+  .result-section {
+    background: #16213e; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-top: 8px;
+    min-height: 100px; position: relative;
+  }
+  .result-section h2 { font-size: 1rem; color: #e94560; margin-bottom: 10px; }
+  .result-list { font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+  .copy-btn {
+    position: absolute; top: 14px; right: 14px; background: #0f3460; color: #eee; border: none;
+    border-radius: 6px; padding: 6px 16px; font-size: 0.8rem; cursor: pointer; transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #1a4a8a; }
+  .error { color: #ff6b6b; }
+  .hint { font-size: 0.75rem; color: #666; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>NFT Owner Aggregator</h1>
+
+  <div class="api-row">
+    <div>
+      <label>Contract Address</label>
+      <input id="contract" value="yuplandshop.mintbase1.near" />
+    </div>
+    <div>
+      <label>API Key</label>
+      <input id="apikey" value="j9mwYHIkRsmhM7dOoJy9yBSEdSZSWtBw02BOIGy3jzk" />
+    </div>
+  </div>
+
+  <div class="input-section">
+    <div>
+      <label>Token IDs</label>
+      <textarea id="tokenIds" placeholder="139656 139698 139590 139559 139732">139656 139698 139590 139559 139732 139508 139612 139836 139591 139889</textarea>
+      <div class="hint">Через пробел, запятую или перенос строки</div>
+    </div>
+    <div>
+      <label>Значения</label>
+      <textarea id="values" placeholder="100 200 50 150 300">100 200 50 150 300 75 125 250 175 80</textarea>
+      <div class="hint">Через пробел, запятую или перенос строки</div>
+    </div>
+  </div>
+
+  <button class="btn" id="runBtn" onclick="run()">Запустить</button>
+  <div class="progress" id="progress"></div>
+
+  <div class="result-section">
+    <h2>Результат: owner_id, сумма</h2>
+    <button class="copy-btn" onclick="copyResult()">Копировать</button>
+    <div class="result-list" id="result"></div>
+  </div>
+</div>
+
+<script>
+const BATCH = 500;
+
+function parse(text) {
+  return text.trim().split(/[\s,]+/).filter(Boolean);
+}
+
+async function run() {
+  const contract = document.getElementById('contract').value.trim();
+  const apikey = document.getElementById('apikey').value.trim();
+  const tokenLines = parse(document.getElementById('tokenIds').value);
+  const valueLines = parse(document.getElementById('values').value);
+  const progress = document.getElementById('progress');
+  const result = document.getElementById('result');
+  const btn = document.getElementById('runBtn');
+
+  if (!tokenLines.length || !valueLines.length) { progress.innerHTML = '<span class="error">Заполните оба поля</span>'; return; }
+  if (tokenLines.length !== valueLines.length) {
+    progress.innerHTML = `<span class="error">Количество Token IDs (${tokenLines.length}) и значений (${valueLines.length}) не совпадает</span>`;
+    return;
+  }
+
+  const pairs = tokenLines.map((t, i) => ({ tokenId: t, value: parseFloat(valueLines[i]) }));
+  if (pairs.some(p => isNaN(p.value))) { progress.innerHTML = '<span class="error">Все значения должны быть числами</span>'; return; }
+
+  btn.disabled = true;
+  result.textContent = '';
+  const ownerMap = {};
+  let done = 0;
+
+  for (let i = 0; i < pairs.length; i += BATCH) {
+    const batch = pairs.slice(i, i + BATCH);
+    const ids = batch.map(b => b.tokenId);
+    progress.textContent = `Загрузка ${Math.min(i + BATCH, pairs.length)} / ${pairs.length}...`;
+
+    try {
+      const res = await fetch(
+        `https://api.sendler.xyz/nft/by-token-ids/?contract_address=${encodeURIComponent(contract)}`,
+        {
+          method: 'POST',
+          headers: { 'accept': 'application/json', 'X-API-Key': apikey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token_ids: ids })
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      for (const item of data.items) {
+        const pair = batch.find(b => b.tokenId === item.token_id);
+        if (!pair) continue;
+        ownerMap[item.owner_id] = (ownerMap[item.owner_id] || 0) + pair.value;
+      }
+      done += batch.length;
+    } catch (e) {
+      progress.innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
+      btn.disabled = false;
+      return;
+    }
+  }
+
+  const lines = Object.entries(ownerMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([owner, sum]) => `${owner},${sum}`)
+    .join('\n');
+
+  result.textContent = lines;
+  progress.textContent = `Готово. ${done} токенов, ${Object.keys(ownerMap).length} владельцев.`;
+  btn.disabled = false;
+}
+
+function copyResult() {
+  const text = document.getElementById('result').textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Скопировано!';
+    setTimeout(() => btn.textContent = 'Копировать', 1500);
+  });
+}
+</script>
+</body>
+</html>
