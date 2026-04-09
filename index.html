@@ -30,7 +30,6 @@
   .pair-row input:focus { outline: none; border-color: #e94560; }
   .remove-btn {
     background: none; border: none; color: #e94560; font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
-    line-height: 1; margin-top: 2px;
   }
   .remove-btn:hover { color: #ff6b6b; }
   .pairs-header { display: flex; gap: 10px; margin-bottom: 6px; font-size: 0.8rem; color: #aaa; }
@@ -67,7 +66,6 @@
 <body>
 <div class="container">
   <h1>NFT Owner Aggregator</h1>
-
   <div class="api-row">
     <div>
       <label>Contract Address</label>
@@ -78,7 +76,6 @@
       <input id="apikey" value="j9mwYHIkRsmhM7dOoJy9yBSEdSZSWtBw02BOIGy3jzk" />
     </div>
   </div>
-
   <div class="pairs-header">
     <span>Token IDs (через пробел, запятую, перенос)</span>
     <span>Значение</span>
@@ -90,14 +87,12 @@
     <button class="btn" id="runBtn" onclick="run()">Запустить</button>
   </div>
   <div class="progress" id="progress"></div>
-
   <div class="result-section">
     <h2>Результат: owner_id, сумма</h2>
     <button class="copy-btn" onclick="copyResult()">Копировать</button>
     <div class="result-list" id="result"></div>
   </div>
 </div>
-
 <script>
 const BATCH = 500;
 const pairsEl = document.getElementById('pairs');
@@ -105,10 +100,9 @@ const pairsEl = document.getElementById('pairs');
 function addPair() {
   const row = document.createElement('div');
   row.className = 'pair-row';
-  row.innerHTML = `<textarea placeholder="139656 139698 139590..."></textarea><input type="number" placeholder="100" /><button class="remove-btn" onclick="this.parentElement.remove()" title="Удалить">×</button>`;
+  row.innerHTML = '<textarea placeholder="139656 139698 139590..."></textarea><input type="number" placeholder="100" /><button class="remove-btn" onclick="this.parentElement.remove()" title="Удалить">×</button>';
   pairsEl.appendChild(row);
 }
-
 addPair();
 
 function collectPairs() {
@@ -124,6 +118,19 @@ function collectPairs() {
   return { pairs: all };
 }
 
+async function fetchBatch(contract, apikey, ids) {
+  const res = await fetch('/api/nft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contract, apikey, token_ids: ids })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 async function run() {
   const contract = document.getElementById('contract').value.trim();
   const apikey = document.getElementById('apikey').value.trim();
@@ -132,7 +139,7 @@ async function run() {
   const btn = document.getElementById('runBtn');
 
   const { pairs, error } = collectPairs();
-  if (error) { progress.innerHTML = `<span class="error">${error}</span>`; return; }
+  if (error) { progress.innerHTML = '<span class="error">' + error + '</span>'; return; }
   if (!pairs.length) { progress.innerHTML = '<span class="error">Нет данных</span>'; return; }
 
   btn.disabled = true;
@@ -143,18 +150,9 @@ async function run() {
   for (let i = 0; i < pairs.length; i += BATCH) {
     const batch = pairs.slice(i, i + BATCH);
     const ids = batch.map(b => b.tokenId);
-    progress.textContent = `Загрузка ${Math.min(i + BATCH, pairs.length)} / ${pairs.length}...`;
+    progress.textContent = 'Загрузка ' + Math.min(i + BATCH, pairs.length) + ' / ' + pairs.length + '...';
     try {
-      const res = await fetch(
-        `https://api.sendler.xyz/nft/by-token-ids/?contract_address=${encodeURIComponent(contract)}`,
-        {
-          method: 'POST',
-          headers: { 'accept': 'application/json', 'X-API-Key': apikey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token_ids: ids })
-        }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await fetchBatch(contract, apikey, ids);
       for (const item of data.items) {
         const pair = batch.find(b => b.tokenId === item.token_id);
         if (!pair) continue;
@@ -162,7 +160,7 @@ async function run() {
       }
       done += batch.length;
     } catch (e) {
-      progress.innerHTML = `<span class="error">Ошибка: ${e.message}</span>`;
+      progress.innerHTML = '<span class="error">Ошибка: ' + e.message + '</span>';
       btn.disabled = false;
       return;
     }
@@ -170,11 +168,11 @@ async function run() {
 
   const lines = Object.entries(ownerMap)
     .sort((a, b) => b[1] - a[1])
-    .map(([owner, sum]) => `${owner},${sum}`)
+    .map(([owner, sum]) => owner + ',' + sum)
     .join('\n');
 
   result.textContent = lines;
-  progress.textContent = `Готово. ${done} токенов, ${Object.keys(ownerMap).length} владельцев.`;
+  progress.textContent = 'Готово. ' + done + ' токенов, ' + Object.keys(ownerMap).length + ' владельцев.';
   btn.disabled = false;
 }
 
