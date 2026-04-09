@@ -7,44 +7,61 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
-  h1 { text-align: center; margin-bottom: 20px; color: #e94560; font-size: 1.4rem; }
+  h1 { text-align: center; margin-bottom: 16px; color: #e94560; font-size: 1.3rem; }
   .container { max-width: 900px; margin: 0 auto; }
-  .input-section { display: flex; gap: 16px; margin-bottom: 12px; }
-  .input-section > div { flex: 1; }
-  .input-section label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #aaa; }
-  .input-section textarea {
-    width: 100%; height: 180px; background: #16213e; border: 1px solid #333; color: #eee;
-    border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.9rem; resize: vertical;
-  }
-  .input-section textarea:focus { outline: none; border-color: #e94560; }
-  .api-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: end; }
+  .api-row { display: flex; gap: 12px; margin-bottom: 14px; }
   .api-row > div { flex: 1; }
-  .api-row label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #aaa; }
+  .api-row label { display: block; margin-bottom: 4px; font-size: 0.8rem; color: #aaa; }
   .api-row input {
     width: 100%; background: #16213e; border: 1px solid #333; color: #eee;
-    border-radius: 8px; padding: 8px 10px; font-size: 0.85rem;
+    border-radius: 6px; padding: 7px 10px; font-size: 0.85rem;
   }
   .api-row input:focus { outline: none; border-color: #e94560; }
+  .pair-row { display: flex; gap: 10px; align-items: start; margin-bottom: 8px; }
+  .pair-row textarea {
+    flex: 1; height: 60px; background: #16213e; border: 1px solid #333; color: #eee;
+    border-radius: 6px; padding: 8px; font-family: monospace; font-size: 0.85rem; resize: vertical;
+  }
+  .pair-row textarea:focus { outline: none; border-color: #e94560; }
+  .pair-row input {
+    width: 100px; background: #16213e; border: 1px solid #333; color: #eee;
+    border-radius: 6px; padding: 8px; font-family: monospace; font-size: 0.85rem; text-align: center;
+  }
+  .pair-row input:focus { outline: none; border-color: #e94560; }
+  .remove-btn {
+    background: none; border: none; color: #e94560; font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
+    line-height: 1; margin-top: 2px;
+  }
+  .remove-btn:hover { color: #ff6b6b; }
+  .pairs-header { display: flex; gap: 10px; margin-bottom: 6px; font-size: 0.8rem; color: #aaa; }
+  .pairs-header span:first-child { flex: 1; }
+  .pairs-header span:nth-child(2) { width: 100px; text-align: center; }
+  .pairs-header span:nth-child(3) { width: 30px; }
   .btn {
-    background: #e94560; color: #fff; border: none; border-radius: 8px; padding: 10px 28px;
-    font-size: 0.95rem; cursor: pointer; transition: background 0.2s;
+    background: #e94560; color: #fff; border: none; border-radius: 6px; padding: 8px 22px;
+    font-size: 0.9rem; cursor: pointer; transition: background 0.2s;
   }
   .btn:hover { background: #c73650; }
   .btn:disabled { background: #555; cursor: not-allowed; }
-  .progress { margin: 10px 0; font-size: 0.85rem; color: #aaa; min-height: 20px; }
-  .result-section {
-    background: #16213e; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-top: 8px;
-    min-height: 100px; position: relative;
+  .btn-add {
+    background: #0f3460; color: #eee; border: none; border-radius: 6px; padding: 6px 16px;
+    font-size: 0.8rem; cursor: pointer; margin-bottom: 12px;
   }
-  .result-section h2 { font-size: 1rem; color: #e94560; margin-bottom: 10px; }
-  .result-list { font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+  .btn-add:hover { background: #1a4a8a; }
+  .actions { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .progress { margin: 8px 0; font-size: 0.85rem; color: #aaa; min-height: 18px; }
+  .result-section {
+    background: #16213e; border: 1px solid #333; border-radius: 8px; padding: 14px; margin-top: 8px;
+    min-height: 60px; position: relative;
+  }
+  .result-section h2 { font-size: 0.95rem; color: #e94560; margin-bottom: 8px; }
+  .result-list { font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 350px; overflow-y: auto; }
   .copy-btn {
-    position: absolute; top: 14px; right: 14px; background: #0f3460; color: #eee; border: none;
-    border-radius: 6px; padding: 6px 16px; font-size: 0.8rem; cursor: pointer; transition: background 0.2s;
+    position: absolute; top: 12px; right: 12px; background: #0f3460; color: #eee; border: none;
+    border-radius: 6px; padding: 5px 14px; font-size: 0.75rem; cursor: pointer;
   }
   .copy-btn:hover { background: #1a4a8a; }
   .error { color: #ff6b6b; }
-  .hint { font-size: 0.75rem; color: #666; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -62,20 +79,16 @@
     </div>
   </div>
 
-  <div class="input-section">
-    <div>
-      <label>Token IDs</label>
-      <textarea id="tokenIds" placeholder="139656 139698 139590 139559 139732">139656 139698 139590 139559 139732 139508 139612 139836 139591 139889</textarea>
-      <div class="hint">Через пробел, запятую или перенос строки</div>
-    </div>
-    <div>
-      <label>Значения</label>
-      <textarea id="values" placeholder="100 200 50 150 300">100 200 50 150 300 75 125 250 175 80</textarea>
-      <div class="hint">Через пробел, запятую или перенос строки</div>
-    </div>
+  <div class="pairs-header">
+    <span>Token IDs (через пробел, запятую, перенос)</span>
+    <span>Значение</span>
+    <span></span>
   </div>
-
-  <button class="btn" id="runBtn" onclick="run()">Запустить</button>
+  <div id="pairs"></div>
+  <div class="actions">
+    <button class="btn-add" onclick="addPair()">+ Добавить строку</button>
+    <button class="btn" id="runBtn" onclick="run()">Запустить</button>
+  </div>
   <div class="progress" id="progress"></div>
 
   <div class="result-section">
@@ -87,28 +100,40 @@
 
 <script>
 const BATCH = 500;
+const pairsEl = document.getElementById('pairs');
 
-function parse(text) {
-  return text.trim().split(/[\s,]+/).filter(Boolean);
+function addPair() {
+  const row = document.createElement('div');
+  row.className = 'pair-row';
+  row.innerHTML = `<textarea placeholder="139656 139698 139590..."></textarea><input type="number" placeholder="100" /><button class="remove-btn" onclick="this.parentElement.remove()" title="Удалить">×</button>`;
+  pairsEl.appendChild(row);
+}
+
+addPair();
+
+function collectPairs() {
+  const rows = pairsEl.querySelectorAll('.pair-row');
+  const all = [];
+  for (const row of rows) {
+    const ids = row.querySelector('textarea').value.trim().split(/[\s,]+/).filter(Boolean);
+    const val = parseFloat(row.querySelector('input').value);
+    if (!ids.length) continue;
+    if (isNaN(val)) return { error: 'Все значения должны быть числами' };
+    for (const id of ids) all.push({ tokenId: id, value: val });
+  }
+  return { pairs: all };
 }
 
 async function run() {
   const contract = document.getElementById('contract').value.trim();
   const apikey = document.getElementById('apikey').value.trim();
-  const tokenLines = parse(document.getElementById('tokenIds').value);
-  const valueLines = parse(document.getElementById('values').value);
   const progress = document.getElementById('progress');
   const result = document.getElementById('result');
   const btn = document.getElementById('runBtn');
 
-  if (!tokenLines.length || !valueLines.length) { progress.innerHTML = '<span class="error">Заполните оба поля</span>'; return; }
-  if (tokenLines.length !== valueLines.length) {
-    progress.innerHTML = `<span class="error">Количество Token IDs (${tokenLines.length}) и значений (${valueLines.length}) не совпадает</span>`;
-    return;
-  }
-
-  const pairs = tokenLines.map((t, i) => ({ tokenId: t, value: parseFloat(valueLines[i]) }));
-  if (pairs.some(p => isNaN(p.value))) { progress.innerHTML = '<span class="error">Все значения должны быть числами</span>'; return; }
+  const { pairs, error } = collectPairs();
+  if (error) { progress.innerHTML = `<span class="error">${error}</span>`; return; }
+  if (!pairs.length) { progress.innerHTML = '<span class="error">Нет данных</span>'; return; }
 
   btn.disabled = true;
   result.textContent = '';
@@ -119,7 +144,6 @@ async function run() {
     const batch = pairs.slice(i, i + BATCH);
     const ids = batch.map(b => b.tokenId);
     progress.textContent = `Загрузка ${Math.min(i + BATCH, pairs.length)} / ${pairs.length}...`;
-
     try {
       const res = await fetch(
         `https://api.sendler.xyz/nft/by-token-ids/?contract_address=${encodeURIComponent(contract)}`,
@@ -131,7 +155,6 @@ async function run() {
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
       for (const item of data.items) {
         const pair = batch.find(b => b.tokenId === item.token_id);
         if (!pair) continue;
@@ -159,9 +182,9 @@ function copyResult() {
   const text = document.getElementById('result').textContent;
   if (!text) return;
   navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('.copy-btn');
-    btn.textContent = 'Скопировано!';
-    setTimeout(() => btn.textContent = 'Копировать', 1500);
+    const b = document.querySelector('.copy-btn');
+    b.textContent = 'Скопировано!';
+    setTimeout(() => b.textContent = 'Копировать', 1500);
   });
 }
 </script>
